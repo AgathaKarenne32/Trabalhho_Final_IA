@@ -12,8 +12,14 @@ De acordo com as diretrizes do trabalho, foi escolhida a **Abordagem A (Compara�
 * 📁 **`images/`**: Contém as evidências visuais (gráficos, matriz de confusão e superfícies de controle 3D) geradas pela entrega oficial.
 
 ### 2. Experimentos e Extras (Estudo de Integração)
-* 📁 **`Experimentos/Trabalho_IA_Estudo_Abordagem_B.ipynb`**: Notebook contendo o "Estado da Arte" do projeto. Aqui, a saída probabilística do Machine Learning é injetada como uma variável linguística dentro do motor Fuzzy, criando uma decisão de risco muito mais holística e interpretável.
-* 📁 **`Experimentos/image_comparacao/`**: Imagens e evidências geradas durante os testes da arquitetura integrada.
+
+Todo o desenvolvimento e histórico da **Abordagem B (Integração)** — onde a saída probabilística da Árvore de Decisão alimenta o motor Fuzzy para criar uma decisão de risco mais holística e interpretável — foi isolado em uma branch específica. Isso garante que a branch `main` fique focada estritamente na entrega oficial solicitada.
+
+Nesta branch extra, você encontrará:
+* 📄 **`Trabalho_IA_Estudo_Abordagem_B.ipynb`**: Notebook contendo o "Estado da Arte" do projeto.
+* 📁 **`image_comparacao/`**: Imagens e evidências geradas durante os testes da arquitetura integrada.
+
+👉 **Para visualizar o código híbrido:** Mude para a branch [`feature/experimentos`](https://github.com/AgathaKarenne32/Trabalhho_Final_IA/tree/feature/experimentos) neste mesmo repositório.
 
 ### 3. Simulador Web Interativo
 * 🌐 **`simulador_evasao_comparacao.html`**: Uma interface web desenvolvida em HTML/JS que traduz toda a matemática dos notebooks. Permite simular as notas e frequências de um aluno fictício e ver as barras de risco reagirem em tempo real, evidenciando as diferenças entre o ML puro, a Abordagem A e a Abordagem B.
