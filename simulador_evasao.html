@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador: Risco de Evasão Acadêmica</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 300px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
+        .val-display {
+            float: right;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .result-box {
+            margin-bottom: 25px;
+        }
+
+        .result-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            height: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease, background-color 0.3s ease;
+            width: 0%;
+        }
+
+        .explanation {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Simulador: Abordagem A vs Abordagem B</h1>
+
+    <div class="container">
+        <div class="panel">
+            <h2>Parâmetros do Aluno (Inputs)</h2>
+
+            <div class="form-group">
+                <label>Frequência (%) <span class="val-display" id="val-freq">60</span></label>
+                <input type="range" id="freq" min="40" max="100" value="60" oninput="calcularRisco()">
+            </div>
+
+            <div class="form-group">
+                <label>Média de Notas (1-10) <span class="val-display" id="val-nota">5.5</span></label>
+                <input type="range" id="nota" min="1" max="10" step="0.1" value="5.5" oninput="calcularRisco()">
+            </div>
+
+            <div class="form-group">
+                <label>Atividades Entregues (0-10) <span class="val-display" id="val-ativ">4</span></label>
+                <input type="range" id="ativ" min="0" max="10" value="4" oninput="calcularRisco()">
+            </div>
+
+            <div class="form-group">
+                <label>Acessos ao AVA (5-150) <span class="val-display" id="val-ava">40</span></label>
+                <input type="range" id="ava" min="5" max="150" value="40" oninput="calcularRisco()">
+            </div>
+
+            <div class="form-group">
+                <label>Reprovações Anteriores (0-3) <span class="val-display" id="val-rep">1</span></label>
+                <input type="range" id="rep" min="0" max="3" value="1" oninput="calcularRisco()">
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Resultados e Comparações</h2>
+
+            <div class="result-box">
+                <div class="result-title">Predição Base (Árvore de Decisão Pura): <span id="out-ml">0%</span></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="bar-ml"></div>
+                </div>
+                <div class="explanation">Avalia todos os 5 parâmetros rigidamente. Sofre grande impacto de reprovações e
+                    acessos.</div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-title" style="color: #e67e22;">Abordagem A (Fuzzy Independente): <span
+                        id="out-a">0%</span></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="bar-a" style="background-color: #e67e22;"></div>
+                </div>
+                <div class="explanation">Ignora atividades, AVA e reprovações. Olha apenas Frequência e Nota, limitando
+                    sua visão sistêmica.</div>
+            </div>
+
+            <div class="result-box">
+                <div class="result-title" style="color: #27ae60;">Abordagem B (Integração ML -> Fuzzy): <span
+                        id="out-b">0%</span></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="bar-b" style="background-color: #27ae60;"></div>
+                </div>
+                <div class="explanation">O estado da arte: Recebe a probabilidade do ML e a suaviza cruzando com a
+                    frequência atual. Decisão holística.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function obterCorBaseadaNoRisco(porcentagem, corPadrao = null) {
+            if (corPadrao) return corPadrao;
+            if (porcentagem < 40) return '#2ecc71'; // Verde (Baixo)
+            if (porcentagem < 70) return '#f1c40f'; // Amarelo (Médio)
+            return '#e74c3c'; // Vermelho (Alto)
+        }
+
+        function calcularRisco() {
+            // Pegando os valores
+            let freq = parseFloat(document.getElementById('freq').value);
+            let nota = parseFloat(document.getElementById('nota').value);
+            let ativ = parseFloat(document.getElementById('ativ').value);
+            let ava = parseFloat(document.getElementById('ava').value);
+            let rep = parseFloat(document.getElementById('rep').value);
+
+            // Atualizando labels
+            document.getElementById('val-freq').innerText = freq;
+            document.getElementById('val-nota').innerText = nota.toFixed(1);
+            document.getElementById('val-ativ').innerText = ativ;
+            document.getElementById('val-ava').innerText = ava;
+            document.getElementById('val-rep').innerText = rep;
+
+            // 1. Lógica ML Pura (Equação baseada no teu Python invertida para gerar Probabilidade)
+            let score = (freq * 0.4) + (nota * 4) + (ativ * 2) + (ava * 0.1) - (rep * 10);
+            // Normalizando o score rudimentar para probabilidade de evasão (quanto menor o score, maior o risco)
+            // Range esperado aprox: [-10 a 115]
+            let probML = 100 - (((score + 10) / 125) * 100);
+            if (probML > 100) probML = 100;
+            if (probML < 0) probML = 0;
+
+            // 2. Lógica Abordagem A (Fuzzy Clássico - apenas freq e nota)
+            // Falta muito e nota baixa = Risco alto. 
+            let riscoA = 100 - ((freq * 0.5) + ((nota * 10) * 0.5));
+            if (riscoA > 100) riscoA = 100;
+            if (riscoA < 0) riscoA = 0;
+
+            // 3. Lógica Abordagem B (Integrada: Probabilidade ML cruzada com Frequência)
+            let riscoB = (probML * 0.6) + ((100 - freq) * 0.4);
+            if (riscoB > 100) riscoB = 100;
+            if (riscoB < 0) riscoB = 0;
+
+            // Atualizando as Barras Visuais
+            document.getElementById('out-ml').innerText = probML.toFixed(1) + "%";
+            document.getElementById('bar-ml').style.width = probML + "%";
+            document.getElementById('bar-ml').style.backgroundColor = obterCorBaseadaNoRisco(probML);
+
+            document.getElementById('out-a').innerText = riscoA.toFixed(1) + "%";
+            document.getElementById('bar-a').style.width = riscoA + "%";
+
+            document.getElementById('out-b').innerText = riscoB.toFixed(1) + "%";
+            document.getElementById('bar-b').style.width = riscoB + "%";
+        }
+
+        // Executa a primeira vez
+        window.onload = calcularRisco;
+    </script>
+</body>
+
+</html>
